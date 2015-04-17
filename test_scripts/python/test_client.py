@@ -14,15 +14,16 @@ def main(argv):
     endpoint = None
     user = None
     password = None
+    auth_service_url = None
     async_job_check_time_ms = None
     try:
-        opts, args = getopt.getopt(argv,"ht:e:u:p:a:",["help","tests=","endpoint=","user=","password=","asyncchecktime="])
+        opts, args = getopt.getopt(argv,"ht:e:u:p:s:a:",["help","tests=","endpoint=","user=","password=","authendpoint","asyncchecktime="])
     except getopt.GetoptError:
         print 'Please use "test_client.py -h" or "test_client.py --help" for help'
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-h", "--help"):
-            print 'test_client.py --tests <json_file> --endpoint <url> [--user <kbase_account> --password <password> [--asyncchecktime <ms>]]'
+            print 'test_client.py --tests <json_file> --endpoint <url> [--user <kbase_account> --password <password> --authendpoint [--asyncchecktime <ms>]]'
             sys.exit()
         elif opt in ("-t", "--tests"):
             tests_filepath = arg
@@ -32,6 +33,8 @@ def main(argv):
             user = arg
         elif opt in ("-p", "--password"):
             password = arg
+        elif opt in ("-s", "--authendpoint"):
+            auth_service_url = arg
         elif opt in ("-a", "--asyncchecktime"):
             async_job_check_time_ms = long(arg)
     fh = open(tests_filepath)
@@ -44,9 +47,12 @@ def main(argv):
         client_instance = None
         if 'auth' in test and test['auth']:
             if async_job_check_time_ms:
-                client_instance = client_class(url = endpoint, user_id = user, password = password, async_job_check_time_ms = async_job_check_time_ms)
+                client_instance = client_class(url = endpoint, user_id = user, password = password, 
+                                               auth_service_url = auth_service_url,
+                                               async_job_check_time_ms = async_job_check_time_ms)
             else:
-                client_instance = client_class(url = endpoint, user_id = user, password = password)
+                client_instance = client_class(url = endpoint, user_id = user, password = password,
+                                               auth_service_url = auth_service_url)
         else:
             client_instance = client_class(url = endpoint, ignore_authrc = True)
         method_name = test['method']

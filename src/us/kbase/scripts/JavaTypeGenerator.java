@@ -453,10 +453,11 @@ public class JavaTypeGenerator {
 						"     * validity.",
 						"     */",
 						"    public " + clientClassName + "(" + urlClass + " url, " + 
-								model.ref("us.kbase.auth.AuthToken") + " token) throws " + 
+								model.ref("us.kbase.auth.AuthToken") + " token, " + 
+						        urlClass + "... authServiceUrl) throws " + 
 								model.ref(utilPackage + ".UnauthorizedException") + ", " +
 								model.ref("java.io.IOException") + " {",
-						"        caller = new " + callerClass + "(url, token);",
+						"        caller = new " + callerClass + "(url, token, authServiceUrl);",
 						"    }",
 						"",
 						"    /** Constructs a client with a custom URL.",
@@ -468,10 +469,11 @@ public class JavaTypeGenerator {
 						"     * credentials.",
 						"     */",
 						"    public " + clientClassName + "(" + urlClass + 
-								" url, String user, String password) throws " + 
+								" url, String user, String password, " + 
+                                urlClass + "... authServiceUrl) throws " + 
 								model.ref(utilPackage + ".UnauthorizedException") + ", " +
 								model.ref("java.io.IOException") + " {",
-						"        caller = new " + callerClass + "(url, user, password);",
+						"        caller = new " + callerClass + "(url, user, password, authServiceUrl);",
 						"    }"
 						));
 				if (url != null) {
@@ -483,10 +485,11 @@ public class JavaTypeGenerator {
 						"     * @throws IOException if an IOException occurs when checking the token's",
 						"     * validity.",
 						"     */",
-						"    public " + clientClassName + "(" + tokenClass + " token) throws " + 
+						"    public " + clientClassName + "(" + tokenClass + " token, " + 
+                                urlClass + "... authServiceUrl) throws " + 
 								model.ref(utilPackage + ".UnauthorizedException") + ", " +
 								model.ref("java.io.IOException") + " {",
-						"        caller = new " + callerClass + "(DEFAULT_URL, token);",
+						"        caller = new " + callerClass + "(DEFAULT_URL, token, authServiceUrl);",
 						"    }",
 						"",
 						"    /** Constructs a client with the default URL.",
@@ -496,10 +499,11 @@ public class JavaTypeGenerator {
 						"     * @throws IOException if an IOException occurs when checking the user's",
 						"     * credentials.",
 						"     */",
-						"    public " + clientClassName + "(String user, String password) throws " + 
+						"    public " + clientClassName + "(String user, String password, " + 
+                                urlClass + "... authServiceUrl) throws " + 
 								model.ref(utilPackage + ".UnauthorizedException") + ", " +
 								model.ref("java.io.IOException") + " {",
-						"        caller = new " + callerClass + "(DEFAULT_URL, user, password);",
+						"        caller = new " + callerClass + "(DEFAULT_URL, user, password, authServiceUrl);",
 						"    }"
 						));
 				}
