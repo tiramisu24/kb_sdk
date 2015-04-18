@@ -183,19 +183,11 @@ public class TypeGeneratorTest extends Assert {
         int portNum;
 		JavaData parsingData;
 		////////////////////////////////////// Perl server /////////////////////////////////////
-        //portNum = findFreePort();
-		//parsingData = prepareJavaCode(testNum, workDir, testPackage, libDir, binDir, portNum, true);
-		//serverOutDir = preparePerlAndPyServerCode(testNum, workDir, false);
-		//runPerlServerTest(testNum, true, workDir, testPackage, libDir, binDir, parsingData, serverOutDir, false, portNum, null, null);
         portNum = findFreePort();
         parsingData = prepareJavaCode(testNum, workDir, testPackage, libDir, binDir, portNum, true);
         serverOutDir = preparePerlAndPyServerCode(testNum, workDir, true);
         runPerlServerTest(testNum, true, workDir, testPackage, libDir, binDir, parsingData, serverOutDir, true, portNum, null);
         ////////////////////////////////////// Python server /////////////////////////////////////
-        //portNum = findFreePort();
-		//parsingData = prepareJavaCode(testNum, workDir, testPackage, libDir, binDir, portNum, true);
-		//serverOutDir = preparePerlAndPyServerCode(testNum, workDir, false);
-		//runPythonServerTest(testNum, true, workDir, testPackage, libDir, binDir, parsingData, serverOutDir, false, portNum, null);
         portNum = findFreePort();
         parsingData = prepareJavaCode(testNum, workDir, testPackage, libDir, binDir, portNum, true);
         serverOutDir = preparePerlAndPyServerCode(testNum, workDir, true);
@@ -333,7 +325,7 @@ public class TypeGeneratorTest extends Assert {
 	        lines = new ArrayList<String>(Arrays.asList("#!/bin/bash"));
             lines.addAll(Arrays.asList(
                     "cd \"" + serverOutDir.getAbsolutePath() + "\"",
-                    "perl " + findPerlServerScript(serverOutDir).getName() + " $1 $2 $3 > perl_cli.out 2> perl_cli.err"
+                    "perl " + findPerlServerScript(serverOutDir).getName() + " $1 $2 $3 $4 > perl_cli.out 2> perl_cli.err"
                     ));
             TextUtils.writeFileLines(lines, new File(workDir, "run_" + moduleName + "_async_job.sh"));
             runPerlServerTest(testNum, true, workDir, testPackage, libDir, binDir, 
@@ -342,7 +334,7 @@ public class TypeGeneratorTest extends Assert {
             lines = new ArrayList<String>(Arrays.asList("#!/bin/bash"));
             lines.addAll(Arrays.asList(
                     "cd \"" + serverOutDir.getAbsolutePath() + "\"",
-                    "python " + findPythonServerScript(serverOutDir).getName() + " $1 $2 $3 > py_cli.out 2> py_cli.err"
+                    "python " + findPythonServerScript(serverOutDir).getName() + " $1 $2 $3 $4 > py_cli.out 2> py_cli.err"
                     ));
             TextUtils.writeFileLines(lines, new File(workDir, "run_" + moduleName + "_async_job.sh"));
 	        runPythonServerTest(testNum, true, workDir, testPackage, libDir, binDir, 
@@ -350,7 +342,7 @@ public class TypeGeneratorTest extends Assert {
             //////////////////////////////////////// Java server ///////////////////////////////////////////
             lines = new ArrayList<String>(Arrays.asList("#!/bin/bash"));
             lines.addAll(Arrays.asList(
-                    "java -cp \"" + cp + "\" " + testPackage + "." + modulePackage + "." + moduleName + "Server $1 $2 $3"
+                    "java -cp \"" + cp + "\" " + testPackage + "." + modulePackage + "." + moduleName + "Server $1 $2 $3 $4"
                     ));
             TextUtils.writeFileLines(lines, new File(workDir, "run_" + moduleName + "_async_job.sh"));
             runJavaServerTest(testNum, true, testPackage, libDir, binDir, parsingData, serverOutDir, 
@@ -362,7 +354,7 @@ public class TypeGeneratorTest extends Assert {
     
     @Test
     public void testErrors() throws Exception {
-        startTest(13, true, true, true);
+        startTest(13, true, true, true, true);
     }
 
     @Test
@@ -386,7 +378,7 @@ public class TypeGeneratorTest extends Assert {
 
     @Test
     public void testServerAuth() throws Exception {
-        startTest(15);
+        startTest(15, true, true, true, false);
     }
     
     private Server startJobService(File binDir, File tempDir) throws Exception {
@@ -394,6 +386,14 @@ public class TypeGeneratorTest extends Assert {
 	    ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 	    context.setContextPath("/");
 	    jettyServer.setHandler(context);
+        String authServiceUrl = System.getProperty("auth-service-url");
+        if (authServiceUrl != null) {
+            File deployCfg = new File(tempDir, "job_service_deploy.cfg");
+            writeIniToFile("KBaseJobService", deployCfg, "auth-service-url", authServiceUrl);
+            System.setProperty("KB_DEPLOYMENT_CONFIG", deployCfg.getAbsolutePath());
+        } else {
+            System.clearProperty("KB_DEPLOYMENT_CONFIG");
+        }
 	    context.addServlet(new ServletHolder(new KBaseJobServiceServer().withBinDir(binDir).withTempDir(tempDir)),"/*");
 	    jettyServer.start();
         return jettyServer;
@@ -415,10 +415,11 @@ public class TypeGeneratorTest extends Assert {
 	}
 	
 	private static void startTest(int testNum, boolean needClientServer) throws Exception {
-	    startTest(testNum, needClientServer, needClientServer, needClientServer);
+	    startTest(testNum, needClientServer, needClientServer, needClientServer, true);
 	}
 
-	private static void startTest(int testNum, boolean needJavaServer, boolean needPerlServer, boolean needPythonServer) throws Exception {
+	private static void startTest(int testNum, boolean needJavaServer, boolean needPerlServer, 
+	        boolean needPythonServer, boolean needOldServers) throws Exception {
 		File workDir = prepareWorkDir(testNum);
 		System.out.println();
 		System.out.println("Test " + testNum + " (" + getCallingMethod() + ") is starting in directory: " + workDir.getName());
@@ -428,17 +429,21 @@ public class TypeGeneratorTest extends Assert {
 		boolean needClientServer = needJavaServer || needPerlServer || needPythonServer;
 		JavaData parsingData = prepareJavaCode(testNum, workDir, testPackage, libDir, binDir, null, needClientServer);
 		if (needClientServer) {
-            File serverOldDir = preparePerlAndPyServerCode(testNum, workDir, false);
+            File serverOldDir = null;
+            if (needOldServers)
+                serverOldDir = preparePerlAndPyServerCode(testNum, workDir, false);
             File serverOutDir = preparePerlAndPyServerCode(testNum, workDir, true);
 		    if (needPerlServer) {
-		        runPerlServerTest(testNum, needClientServer, workDir, testPackage,
-		                libDir, binDir, parsingData, serverOldDir, false, findFreePort(), null);
+		        if (needOldServers)
+		            runPerlServerTest(testNum, needClientServer, workDir, testPackage,
+		                    libDir, binDir, parsingData, serverOldDir, false, findFreePort(), null);
 		        runPerlServerTest(testNum, needClientServer, workDir, testPackage,
 		                libDir, binDir, parsingData, serverOutDir, true, findFreePort(), null);
 		    }
             if (needPythonServer) {
-		        runPythonServerTest(testNum, needClientServer, workDir, testPackage, libDir, binDir, 
-		                parsingData, serverOldDir, false, findFreePort(), null);
+                if (needOldServers)
+                    runPythonServerTest(testNum, needClientServer, workDir, testPackage, libDir, binDir, 
+                            parsingData, serverOldDir, false, findFreePort(), null);
 		        runPythonServerTest(testNum, needClientServer, workDir, testPackage, libDir, binDir, 
 		                parsingData, serverOutDir, true, findFreePort(), null);
 		    }
@@ -576,10 +581,15 @@ public class TypeGeneratorTest extends Assert {
 			}
 		}
 	}
-	
+
 	private static void writeIniToFile(JavaData parsingData, File target, 
 	        String... keysValues) throws Exception {
-	    String moduleName = parsingData.getModules().get(0).getOriginal().getModuleName();
+	    writeIniToFile(parsingData.getModules().get(0).getOriginal().getModuleName(), 
+	            target, keysValues);
+	}
+
+	private static void writeIniToFile(String moduleName, File target, 
+	        String... keysValues) throws Exception {
 	    List<String> lines = new ArrayList<String>();
 	    lines.add("[" + moduleName + "]");
 	    for (int i = 0; i < keysValues.length / 2; i++)

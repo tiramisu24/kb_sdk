@@ -16,6 +16,7 @@ import us.kbase.common.service.UObject;
 import us.kbase.common.utils.UTCDateFormat;
 import us.kbase.scripts.util.ProcessHelper;
 //END_HEADER
+import us.kbase.scripts.util.ProcessHelper.CommandHolder;
 
 /**
  * <p>Original spec-file module name: KBaseJobService</p>
@@ -31,6 +32,7 @@ public class KBaseJobServiceServer extends JsonServerServlet {
     private Map<String, FinishJobParams> results = new LinkedHashMap<String, FinishJobParams>();
     private File binDir = null;
     private File tempDir = null;
+    private String authServiceUrl = null;
     
     public KBaseJobServiceServer withBinDir(File binDir) {
         this.binDir = binDir;
@@ -62,6 +64,7 @@ public class KBaseJobServiceServer extends JsonServerServlet {
     public KBaseJobServiceServer() throws Exception {
         super("KBaseJobService");
         //BEGIN_CONSTRUCTOR
+        this.authServiceUrl = config.get("auth-service-url");
         //END_CONSTRUCTOR
     }
 
@@ -111,8 +114,11 @@ public class KBaseJobServiceServer extends JsonServerServlet {
                     UObject.getMapper().writeValue(inputFile, rpc);
                     String scriptFilePath = getBinScript("run_" + serviceName + "_async_job.sh");
                     File outputFile = new File(jobDir, "output.json");
-                    ProcessHelper.cmd("bash", scriptFilePath, inputFile.getCanonicalPath(),
-                            outputFile.getCanonicalPath(), token).exec(jobDir);
+                    CommandHolder ch = ProcessHelper.cmd("bash", scriptFilePath, inputFile.getCanonicalPath(),
+                            outputFile.getCanonicalPath(), token);
+                    if (authServiceUrl != null)
+                        ch.add(authServiceUrl);
+                    ch.exec(jobDir);
                     FinishJobParams result = UObject.getMapper().readValue(outputFile, FinishJobParams.class);
                     finishJob(jobId, result, new AuthToken(token));
                 } catch (Exception ex) {
