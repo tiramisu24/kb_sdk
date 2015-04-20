@@ -185,9 +185,17 @@ public class TypeGeneratorTest extends Assert {
 		////////////////////////////////////// Perl server /////////////////////////////////////
         portNum = findFreePort();
         parsingData = prepareJavaCode(testNum, workDir, testPackage, libDir, binDir, portNum, true);
+        serverOutDir = preparePerlAndPyServerCode(testNum, workDir, false);
+        runPerlServerTest(testNum, true, workDir, testPackage, libDir, binDir, parsingData, serverOutDir, false, portNum, null);
+        portNum = findFreePort();
+        parsingData = prepareJavaCode(testNum, workDir, testPackage, libDir, binDir, portNum, true);
         serverOutDir = preparePerlAndPyServerCode(testNum, workDir, true);
         runPerlServerTest(testNum, true, workDir, testPackage, libDir, binDir, parsingData, serverOutDir, true, portNum, null);
         ////////////////////////////////////// Python server /////////////////////////////////////
+        portNum = findFreePort();
+        parsingData = prepareJavaCode(testNum, workDir, testPackage, libDir, binDir, portNum, true);
+        serverOutDir = preparePerlAndPyServerCode(testNum, workDir, false);
+        runPythonServerTest(testNum, true, workDir, testPackage, libDir, binDir, parsingData, serverOutDir, false, portNum, null);
         portNum = findFreePort();
         parsingData = prepareJavaCode(testNum, workDir, testPackage, libDir, binDir, portNum, true);
         serverOutDir = preparePerlAndPyServerCode(testNum, workDir, true);

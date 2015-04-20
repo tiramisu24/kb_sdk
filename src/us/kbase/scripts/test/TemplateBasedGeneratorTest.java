@@ -36,11 +36,11 @@ public class TemplateBasedGeneratorTest {
     
     @Test
     public void customTest() throws Exception {
-        test(22, "" +
+        Assert.assertTrue(test(22, "" +
                 "module ServerSideErrors\n" +
                 "{\n" +
                 "    funcdef produce_error_on_server_side(string p1) returns (string);\n" +
-                "};");
+                "};"));
     }
 
     private static boolean test(int testNum, String spec) throws Exception {
